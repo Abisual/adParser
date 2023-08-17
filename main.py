@@ -3,14 +3,15 @@ from lxml import html
 import time
 import random
 from urllib.parse import urljoin
-from config import query, container_xpath, title_xpath, price_xpath, link_xpath, description_xpath, description_parts_xpath
+from config import query, container_xpath, title_xpath, price_xpath, link_xpath, \
+    description_xpath, description_parts_xpath, user_agents
 
 def parse_drom(query):
     base_url = f"https://auto.drom.ru/search{query}"
     current_page = 1  # Текущая страница
 
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
+        "User-Agent": random.choice(user_agents)
     }
 
     while True:
