@@ -1,10 +1,35 @@
+import re
 import requests
 from lxml import html
 import time
 import random
+import sqlite3
 from urllib.parse import urljoin
 from config import query, container_xpath, title_xpath, price_xpath, link_xpath, \
     description_xpath, description_parts_xpath, user_agents
+
+def create_table(conn):
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS ads (
+            id INTEGER PRIMARY KEY,
+            title TEXT,
+            price TEXT,
+            link TEXT,
+            description TEXT,
+            query TEXT,
+            unique_id TEXT
+        )
+    ''')
+    conn.commit()
+
+def insert_into_db(conn, data, unique_id):
+    cursor = conn.cursor()
+    cursor.execute('''
+        INSERT INTO ads (title, price, link, description, query, unique_id) 
+        VALUES (?, ?, ?, ?, ?, ?)
+    ''', (data['title'], data['price'], data['link'], data['description'], query, unique_id))
+    conn.commit()
 
 def parse_drom(query):
     base_url = f"https://auto.drom.ru/search{query}"
@@ -48,7 +73,19 @@ def parse_drom(query):
                     price = price_elem.text.strip()  # Получаем текст из HtmlElement
                     link = link_elem.get("href")  # Получаем ссылку
 
-                    results.append({"title": title, "price": price, "link": link, "description": description})
+                    unique_id_match = re.search(r'(\d+)\.html', link)
+                    if unique_id_match:
+                        unique_id = unique_id_match.group(1)
+                    else:
+                        unique_id = ""
+
+                    data = {"title": title, "price": price, "link": link, "description": description}
+                    results.append(data)
+
+                    conn = sqlite3.connect("ads.db")
+                    create_table(conn)
+                    insert_into_db(conn, data, unique_id)
+                    conn.close()
 
                 if results:
                     print(f"Результаты парсинга со страницы {current_page}:")
@@ -74,6 +111,5 @@ def parse_drom(query):
             print("Ошибка при выполнении запроса. Код ответа:", response.status_code)
             break
 
-query = query
 print("Начинаем парсинг сайта Drom.ru")
 parse_drom(query)
