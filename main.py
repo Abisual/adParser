@@ -110,6 +110,5 @@ def parse_drom(query):
         else:
             print("Ошибка при выполнении запроса. Код ответа:", response.status_code)
             break
-
 print("Начинаем парсинг сайта Drom.ru")
 parse_drom(query)
